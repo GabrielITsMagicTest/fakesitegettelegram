@@ -16,20 +16,21 @@ const numbersPage = []
 let sessions = null
 
 async function openPhoneReceiveCod(number) {
-	let options = {}
+	let options = {};
+
 	if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
-		options = {
-			args: [...chrome.args, "--hide_scrollbars", "disable-web-security"],
-			defaultViewport: chrome.defaultViewport,
-			executablePath: await chrome.executablePath,
-			headless: chrome.headless,
-			ignoreHTTPSErrors: true,
-		}
-	}else {
-		options = {
-            headless: false,  // Mostrar o navegador localmente
-            args: ["--no-sandbox", "--disable-setuid-sandbox"]
-        }
+	    options = {
+	        args: [...chrome.args, "--hide-scrollbars", "--disable-web-security"],
+	        executablePath: await chrome.executablePath, // obrigatório
+	        headless: chrome.headless,
+	        ignoreHTTPSErrors: true,
+	        defaultViewport: chrome.defaultViewport
+	    };
+	} else {
+	    options = {
+	        headless: false,
+	        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+	    };
 	}
 
 	const browser = await puppeteer.launch(options)
