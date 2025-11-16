@@ -19,10 +19,10 @@ async function openPhoneReceiveCod(number) {
 	let options = {}
 	if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
 		options = {
-			args: [...chrome.args, "--hide_scrollbars", "disable-web-segurity"],
+			args: [...chrome.args, "--hide_scrollbars", "disable-web-security"],
 			defaultViewport: chrome.defaultViewport,
 			executablePath: await chrome.executablePath,
-			headers: true,
+			headless: chrome.headless,
 			ignoreHTTPSErrors: true,
 		}
 	}else {
