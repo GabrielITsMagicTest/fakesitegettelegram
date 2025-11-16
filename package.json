@@ -11,9 +11,12 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "chrome-aws-lambda": "^6",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "puppeteer-core": "^6"
+  },
+  "devDependencies": {
     "puppeteer": "^24.30.0"
   }
 }

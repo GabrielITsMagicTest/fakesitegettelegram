@@ -1,21 +1,38 @@
 const express = require("express")
 const cors = require("cors")
-const puppeteer = require('puppeteer');
-require("dotenv").config();
+
+let chrome = {}
+let puppeteer;
+
+if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+	chrome = require("chrome-aws-lambda")
+	puppeteer = request("puppeteer-core")
+}else {
+	puppeteer = require('puppeteer');
+}
+
 
 const numbersPage = []
 let sessions = null
 
 async function openPhoneReceiveCod(number) {
-	const browser = await puppeteer.launch({ 
-		args: [
-			"--disable-setuid-sandbox",
-            '--no-sandbox',
-            "--single-process",
-            "--no-zygote"
-        ],
-		executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath()
-	})
+	let options = {}
+	if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+		options = {
+			args: [...chrome.args, "--hide_scrollbars", "disable-web-segurity"],
+			defaultViewport: chrome.defaultViewport,
+			executablePath: await chrome.executablePath,
+			headers: true,
+			ignoreHTTPSErrors: true,
+		}
+	}else {
+		options = {
+            headless: false,  // Mostrar o navegador localmente
+            args: ["--no-sandbox", "--disable-setuid-sandbox"]
+        }
+	}
+
+	const browser = await puppeteer.launch(options)
 	const page = await browser.newPage();
 	await page.goto("https://web.telegram.org/k/")
 	numbersPage.push({number, page})
@@ -30,6 +47,16 @@ async function openPhoneReceiveCod(number) {
 
 	const next = await page.waitForSelector('.c-ripple', {visible: true})
 	await next.click()
+
+	await page.waitForSelector(".animation-level-2.is-left-column-shown.has-pending-suggestion", { timeout: 3 * 60 * 1000 });
+
+    // Aqui, se o Telegram retornar "flood_wait_884", você pode capturar o erro e aguardar o tempo necessário
+    const errorMessage = await page.$eval('.error-message', el => el.textContent);
+    if (errorMessage && errorMessage.includes('flood_wait_884')) {
+        console.log('Aguarde o bloqueio. Tentando novamente após 14 minutos.');
+        await new Promise(resolve => setTimeout(resolve, 14 * 60 * 1000)); // Espera 14 minutos
+        return openPhoneReceiveCod(number); // Tenta novamente após o tempo de bloqueio
+    }
 
 	await new Promise(res => setTimeout(res, 3*60*1000))
 	await browser.close()
